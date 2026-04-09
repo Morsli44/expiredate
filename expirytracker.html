@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محفظة الوثائق الذكية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fdfdfe; --card: #ffffff; --primary: #4f46e5;
+            --text: #0f172a; --sub: #64748b; --border: #f1f5f9;
+            --danger: #ef4444; --warning: #f59e0b; --success: #10b981;
+        }
+
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text); 
+            display: flex; 
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 480px; 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 28px; 
+            border-radius: 28px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); 
+        }
+        
+        h2 { 
+            text-align: center; 
+            color: var(--text); 
+            margin-bottom: 25px; 
+            font-weight: 800; 
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* الكاميرا والزر الشفاف */
+        #camera-container { 
+            width: 100%; 
+            background: #000; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin-bottom: 20px; 
+            position: relative; 
+            display: none; 
+            aspect-ratio: 3 / 4; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        #capture-btn { 
+            position: absolute; 
+            bottom: 25px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+            color: white;
+            padding: 12px 30px; 
+            border-radius: 50px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: 0.3s;
+            z-index: 10;
+        }
+
+        /* حقول الإدخال */
+        .form-group { margin-bottom: 18px; }
+        label { 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            color: var(--sub); 
+            display: block; 
+            margin-bottom: 6px; 
+            padding-right: 5px;
+        }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border: 1px solid var(--border); 
+            background: #f8fafc;
+            border-radius: 14px; 
+            box-sizing: border-box; 
+            outline: none; 
+            font-family: inherit;
+            font-size: 15px; 
+            transition: 0.2s;
+        }
+        input:focus { 
+            border-color: var(--primary); 
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        
+        .btn-camera { 
+            width: 100%; 
+            padding: 14px; 
+            background: #f5f3ff; 
+            color: var(--primary); 
+            border: 2px dashed #c4b5fd; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-add { 
+            width: 100%; 
+            padding: 16px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-size: 16px;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        /* عرض الوثائق */
+        .doc-item { 
+            background: #ffffff; 
+            border: 1px solid var(--border); 
+            border-radius: 24px; 
+            margin-bottom: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+        .doc-img-preview { 
+            width: 100%; 
+            height: auto; 
+            max-height: 380px; 
+            object-fit: contain; 
+            background: #fafafa;
+        }
+        .doc-content { padding: 18px; display: flex; justify-content: space-between; align-items: flex-start; }
+        
+        .doc-info b { font-size: 1.1rem; color: var(--text); font-weight: 800; display: block; }
+        .doc-info small { color: var(--sub); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+
+        .status-tag { 
+            padding: 5px 12px; 
+            border-radius: 10px; 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            display: inline-block; 
+            margin-top: 10px;
+            letter-spacing: 0.2px;
+        }
+        .badge-green { background: #ecfdf5; color: var(--success); }
+        .badge-orange { background: #fffbeb; color: var(--warning); border: 1px solid #fef3c7; }
+        .badge-red { background: #fef2f2; color: var(--danger); border: 1px solid #fee2e2; }
+        
+        .urgent-alert { animation: blinker 1s ease-in-out infinite alternate; }
+        @keyframes blinker { from { opacity: 1; } to { opacity: 0.6; } }
+
+        .btn-delete { 
+            background: #fff; 
+            border: 1px solid #fee2e2; 
+            color: var(--danger); 
+            width: 38px; 
+            height: 38px; 
+            border-radius: 12px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+   محفظة تاريخ إنتهاء الصلاحية
+    </h2>
+
+    <div id="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <button id="capture-btn" onclick="takeSnapshot()">📸 التقاط الوثيقة</button>
+    </div>
+
+    <button class="btn-camera" id="start-cam" onclick="startCamera()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+        تصوير وثيقة جديدة
+    </button>
+
+    <div class="form-group">
+        <label>اسم الوثيقة</label>
+        <input type="text" id="docName" placeholder="مثلاً: بطاقة التعريف الوطنية">
+    </div>
+    
+    <div class="form-group">
+        <label>تاريخ الانتهاء</label>
+        <input type="date" id="docDate">
+    </div>
+
+    <button class="btn-add" onclick="saveDocument()">💾 حفظ في المحفظة</button>
+
+    <div id="docList" class="doc-list"></div>
+</div>
+
+<script>
+    let documents = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
+    let currentImgData = "";
+
+    async function startCamera() {
+        const container = document.getElementById('camera-container');
+        const video = document.getElementById('video');
+        container.style.display = 'block';
+        document.getElementById('start-cam').style.display = 'none';
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
+            video.srcObject = stream;
+        } catch (err) { alert("خطأ في الكاميرا: " + err); }
+    }
+
+    function takeSnapshot() {
+        const video = document.getElementById('video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        currentImgData = canvas.toDataURL('image/jpeg', 0.5); 
+        video.srcObject.getTracks().forEach(track => track.stop());
+        document.getElementById('camera-container').style.display = 'none';
+        document.getElementById('start-cam').style.display = 'block';
+        document.getElementById('start-cam').innerText = "🔄 إعادة التصوير";
+    }
+
+    function saveDocument() {
+        const name = document.getElementById('docName').value;
+        const date = document.getElementById('docDate').value;
+        if (name && date && currentImgData) {
+            documents.push({ name, date, image: currentImgData, id: Date.now() });
+            localStorage.setItem('hicham_docs_pro', JSON.stringify(documents));
+            location.reload();
+        } else { alert("يرجى إكمال البيانات والتصوير أولاً"); }
+    }
+
+    function deleteDoc(id) {
+        if(confirm("هل أنت متأكد من حذف الوثيقة؟")) {
+            documents = documents.filter(d => d.id !== id);
+            localStorage.setItem('hicham_docs_pro', JSON.stringify(documents));
+            render();
+        }
+    }
+
+    function getAlertStyle(expiryDate) {
+        const diffDays = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return { text: "⚠️ منتهية الصلاحية", class: "badge-red urgent-alert", color: "#f87171" };
+        if (diffDays <= 7) return { text: `🚨 تنبيه حرج: ${diffDays} يوم`, class: "badge-red urgent-alert", color: "#f87171" };
+        if (diffDays <= 30) return { text: `📅 اقترب الموعد: ${diffDays} يوم`, class: "badge-orange", color: "#fbbf24" };
+        return { text: `✅ صالحة: ${diffDays} يوم`, class: "badge-green", color: "#34d399" };
+    }
+
+    function render() {
+        const list = document.getElementById('docList');
+        documents.sort((a, b) => new Date(a.date) - new Date(b.date));
+        list.innerHTML = documents.map(doc => {
+            const alert = getAlertStyle(doc.date);
+            return `
+                <div class="doc-item" style="border-right: 6px solid ${alert.color}">
+                    <img src="${doc.image}" class="doc-img-preview">
+                    <div class="doc-content">
+                        <div class="doc-info">
+                            <b>${doc.name}</b>
+                            <small>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                ${doc.date}
+                            </small>
+                            <span class="status-tag ${alert.class}">${alert.text}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deleteDoc(${doc.id})">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    render();
+</script>
+
+</body>
+</html>
