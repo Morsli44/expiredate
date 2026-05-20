@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محفظة الوثائق الذكية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700;800&display=swap" rel="stylesheet">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     
     <style>
         :root {
-            --bg: #fdfdfe; --card: #ffffff; --primary: #4f46e5;
-            --text: #0f172a; --sub: #64748b; --border: #f1f5f9;
+            --bg: #f8fafc; --card: #ffffff; --primary: #4f46e5; --primary-hover: #4338ca;
+            --text: #0f172a; --sub: #64748b; --border: #e2e8f0;
             --danger: #ef4444; --warning: #f59e0b; --success: #10b981;
         }
 
@@ -19,7 +19,7 @@
             font-family: 'Cairo', sans-serif; 
             background: var(--bg); 
             margin: 0; 
-            padding: 20px; 
+            padding: 16px; 
             color: var(--text); 
             display: flex; 
             flex-direction: column;
@@ -35,10 +35,11 @@
             max-width: 480px; 
             background: var(--card); 
             border: 1px solid var(--border); 
-            padding: 28px; 
-            border-radius: 28px; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); 
+            padding: 24px; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02); 
             box-sizing: border-box;
+            margin-bottom: 20px;
         }
         
         h2 { 
@@ -46,7 +47,7 @@
             color: var(--text); 
             margin-bottom: 25px; 
             font-weight: 800; 
-            letter-spacing: -0.5px;
+            font-size: 1.4rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -58,23 +59,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f8fafc;
-            padding: 10px 16px;
-            border-radius: 14px;
-            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
             font-size: 0.9rem;
             border: 1px solid var(--border);
         }
         .btn-logout {
-            background: none;
-            border: none;
-            color: var(--danger);
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            background: none; border: none; color: var(--danger);
+            font-weight: 700; font-family: inherit; cursor: pointer;
+            display: flex; align-items: center; gap: 5px;
         }
 
         #camera-container { 
@@ -86,168 +81,158 @@
             position: relative; 
             display: none; 
             aspect-ratio: 3 / 4; 
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         video { width: 100%; height: 100%; object-fit: cover; }
 
+        #flash-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 11;
+        }
+
         #capture-btn { 
             position: absolute; 
-            bottom: 25px; 
+            bottom: 20px; 
             left: 50%; 
             transform: translateX(-50%); 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4); 
-            color: white;
-            padding: 12px 30px; 
+            background: #ffffff; 
+            color: #000;
+            border: none;
+            padding: 12px 28px; 
             border-radius: 50px; 
-            font-weight: 600; 
+            font-weight: 700; 
             cursor: pointer; 
-            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             z-index: 10;
         }
 
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 16px; }
         label { 
-            font-size: 0.8rem; 
-            font-weight: 600; 
-            color: var(--sub); 
-            display: block; 
-            margin-bottom: 6px; 
-            padding-right: 5px;
+            font-size: 0.85rem; font-weight: 700; color: var(--sub); 
+            display: block; margin-bottom: 6px; padding-right: 4px;
         }
         input { 
-            width: 100%; 
-            padding: 14px; 
-            border: 1px solid var(--border); 
-            background: #f8fafc;
-            border-radius: 14px; 
-            box-sizing: border-box; 
-            outline: none; 
-            font-family: inherit;
-            font-size: 15px; 
-            transition: 0.2s;
+            width: 100%; padding: 14px; border: 1px solid var(--border); 
+            background: #f8fafc; border-radius: 14px; box-sizing: border-box; 
+            outline: none; font-family: inherit; font-size: 15px; transition: 0.2s;
         }
         input:focus { 
-            border-color: var(--primary); 
-            background: white;
+            border-color: var(--primary); background: white;
             box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
         }
         
         .btn-camera { 
-            width: 100%; 
-            padding: 14px; 
-            background: #f5f3ff; 
-            color: var(--primary); 
-            border: 2px dashed #c4b5fd; 
-            border-radius: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            width: 100%; padding: 14px; background: #eef2ff; color: var(--primary); 
+            border: 2px dashed #c7d2fe; border-radius: 14px; font-weight: 700; 
+            cursor: pointer; margin-bottom: 20px; display: flex;
+            align-items: center; justify-content: center; gap: 10px;
         }
         
         .btn-add { 
-            width: 100%; 
-            padding: 16px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 16px;
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+            width: 100%; padding: 14px; background: var(--primary); color: white; 
+            border: none; border-radius: 14px; font-weight: 700; cursor: pointer; 
+            font-size: 16px; transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
         }
+        .btn-add:hover { background: var(--primary-hover); }
 
-        .doc-item { 
-            background: #ffffff; 
-            border: 1px solid var(--border); 
-            border-radius: 24px; 
-            margin-bottom: 20px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-            margin-top: 20px;
-        }
-        .doc-img-preview { 
-            width: 100%; 
-            height: auto; 
-            max-height: 380px; 
-            object-fit: contain; 
-            background: #fafafa;
-        }
-        .no-img-preview {
-            width: 100%;
-            height: 120px;
-            background: #f1f5f9;
+        /* تعديل تصميم القائمة لتكون على شكل أيقونات عمودية متناسقة */
+        .doc-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        
+        .doc-row-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: #94a3b8;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 16px;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .doc-content { padding: 18px; display: flex; justify-content: space-between; align-items: flex-start; }
-        
-        .doc-info b { font-size: 1.1rem; color: var(--text); font-weight: 800; display: block; }
-        .doc-info small { color: var(--sub); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .doc-row-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.03);
+        }
 
-        .status-tag { 
-            padding: 5px 12px; 
-            border-radius: 10px; 
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            display: inline-block; 
-            margin-top: 10px;
-            letter-spacing: 0.2px;
+        .doc-avatar {
+            width: 54px; height: 54px; border-radius: 12px;
+            object-fit: cover; flex-shrink: 0; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: white; font-size: 1.3rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .badge-green { background: #ecfdf5; color: var(--success); }
-        .badge-orange { background: #fffbeb; color: var(--warning); border: 1px solid #fef3c7; }
-        .badge-red { background: #fef2f2; color: var(--danger); border: 1px solid #fee2e2; }
+
+        .doc-details { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; }
+        .doc-title-text { font-size: 1rem; font-weight: 700; color: var(--text); }
+        .doc-date-text { font-size: 0.8rem; color: var(--sub); display: flex; align-items: center; gap: 4px; }
         
+        .status-tag { 
+            padding: 3px 8px; border-radius: 8px; font-size: 0.72rem; 
+            font-weight: 700; display: inline-block; width: fit-content; margin-top: 4px;
+        }
+        .badge-green { background: #e6f4ea; color: var(--success); }
+        .badge-orange { background: #fff7ed; color: var(--warning); }
+        .badge-red { background: #fef2f2; color: var(--danger); }
         .urgent-alert { animation: blinker 1s ease-in-out infinite alternate; }
-        @keyframes blinker { from { opacity: 1; } to { opacity: 0.6; } }
+        @keyframes blinker { from { opacity: 1; } to { opacity: 0.7; } }
 
         .btn-delete { 
-            background: #fff; 
-            border: 1px solid #fee2e2; 
-            color: var(--danger); 
-            width: 38px; 
-            height: 38px; 
-            border-radius: 12px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #fef2f2; border: none; color: var(--danger); 
+            width: 36px; height: 36px; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: 0.2s;
         }
-        .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+        .btn-delete:hover { background: var(--danger); color: white; }
 
-        .toggle-auth-text {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 0.85rem;
-            color: var(--sub);
+        /* نافذة العرض الكامل والمودال مع ميزة الزوم */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); z-index: 999;
+            justify-content: center; align-items: center; flex-direction: column; padding: 20px;
+            box-sizing: border-box;
         }
-        .toggle-auth-text span {
-            color: var(--primary);
-            cursor: pointer;
-            font-weight: 700;
+        .modal-header {
+            width: 100%; max-width: 500px; display: flex; justify-content: space-between;
+            align-items: center; color: white; margin-bottom: 15px;
         }
-        .forgot-password-link {
-            display: block;
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: var(--sub);
-            text-decoration: none;
-            cursor: pointer;
+        .modal-title { font-weight: 700; font-size: 1.1rem; }
+        .close-modal {
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;
         }
-        .forgot-password-link:hover {
-            color: var(--primary);
+        .modal-body {
+            width: 100%; max-width: 500px; height: 60vh; display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
+            background: #000; border-radius: 16px; position: relative;
         }
+        .modal-img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            transition: transform 0.1s ease; transform-origin: center center;
+        }
+        .zoom-controls {
+            width: 100%; max-width: 500px; display: flex; align-items: center;
+            gap: 10px; margin-top: 15px; color: white; justify-content: center;
+        }
+        .zoom-slider { flex-grow: 1; max-width: 300px; accent-color: var(--primary); }
+
+        .toggle-auth-text { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--sub); }
+        .toggle-auth-text span { color: var(--primary); cursor: pointer; font-weight: 700; }
+        .forgot-password-link { display: block; text-align: center; margin-top: 10px; font-size: 0.8rem; color: var(--sub); text-decoration: none; cursor: pointer; }
+        .forgot-password-link:hover { color: var(--primary); }
     </style>
 </head>
 <body>
@@ -288,6 +273,7 @@
     </h2>
 
     <div id="camera-container">
+        <button id="flash-btn" onclick="toggleFlash()">🔦 الفلاش: OFF</button>
         <video id="video" autoplay playsinline></video>
         <button id="capture-btn" onclick="takeSnapshot()">📸 التقاط الوثيقة</button>
     </div>
@@ -312,6 +298,21 @@
     <div id="docList" class="doc-list"></div>
 </div>
 
+<div id="image-modal" class="modal">
+    <div class="modal-header">
+        <div class="modal-title" id="modal-doc-title">عرض الوثيقة</div>
+        <button class="close-modal" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+        <img id="modal-img-target" class="modal-img" src="" alt="">
+    </div>
+    <div class="zoom-controls">
+        <span>🔎 تصغير</span>
+        <input type="range" id="zoom-slider" class="zoom-slider" min="1" max="4" step="0.1" value="1" oninput="applyZoom(this.value)">
+        <span>تكبير 🔍</span>
+    </div>
+</div>
+
 <script>
     let users = JSON.parse(localStorage.getItem('wallet_users')) || [];
     let allDocuments = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
@@ -320,8 +321,10 @@
     let authMode = "login"; 
     let currentImgData = "";
     let resetEmailTarget = ""; 
+    let videoStream = null;
+    let isFlashOn = false;
 
-    // تهيئة مكتبة EmailJS بالمفاتيح الصحيحة المستخرجة من حسابك بنجاح
+    // تهيئة مكتبة EmailJS بمفاتيحك الحقيقية والجاهزة للعمل مباشرة
     (function() {
         emailjs.init({
             publicKey: "-KryRcikMUDVyC3kQ", 
@@ -422,13 +425,8 @@
                     reset_link: finalResetLink
                 };
 
-                // استخدام معرف الخدمة ومعرف القالب الخاص بك لإرسال بريد الاستعادة
-                emailjs.send(
-                    'service_bjt0g0d', 
-                    'template_70cxo8f', 
-                    templateParams
-                )
-                .then(function(response) {
+                emailjs.send('service_bjt0g0d', 'template_70cxo8f', templateParams)
+                .then(function() {
                     btn.innerText = "إرسال رابط إعادة التعيين لإيميلي";
                     btn.disabled = false;
                     alert("🔒 تم إرسال الرابط بنجاح وسرية تامة مباشرة إلى بريدك الإلكتروني.");
@@ -492,12 +490,31 @@
         const video = document.getElementById('video');
         container.style.display = 'block';
         document.getElementById('start-cam').style.display = 'none';
+        isFlashOn = false;
+        document.getElementById('flash-btn').innerText = "🔦 الفلاش: OFF";
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
-            video.srcObject = stream;
+            video.srcObject = videoStream;
         } catch (err) { alert("خطأ في الكاميرا: " + err); }
+    }
+
+    async function toggleFlash() {
+        if (!videoStream) return;
+        const track = videoStream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        if (!capabilities.torch) {
+            alert("الفلاش (Torch) غير مدعوم على متصفحك أو جهازك الحالي.");
+            return;
+        }
+        try {
+            isFlashOn = !isFlashOn;
+            await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+            document.getElementById('flash-btn').innerText = isFlashOn ? "⚡ الفلاش: ON" : "🔦 الفلاش: OFF";
+        } catch (e) {
+            alert("حدث خطأ أثناء محاولة تبديل وضع الفلاش.");
+        }
     }
 
     function takeSnapshot() {
@@ -507,18 +524,45 @@
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
         currentImgData = canvas.toDataURL('image/jpeg', 0.5); 
-        video.srcObject.getTracks().forEach(track => track.stop());
+        
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
         document.getElementById('camera-container').style.display = 'none';
         document.getElementById('start-cam').style.display = 'block';
         document.getElementById('start-cam').innerText = "🔄 إعادة التصوير";
     }
 
+    // توليد مظهر عشوائي أنيق للوثائق التي ليس بها صور مصورة
+    function generateRandomAvatar(name) {
+        const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const firstLetter = name ? name.trim().charAt(0).toUpperCase() : '✏️';
+        return { color: randomColor, letter: firstLetter };
+    }
+
     function saveDocument() {
-        const name = document.getElementById('docName').value;
+        const name = document.getElementById('docName').value.trim();
         const date = document.getElementById('docDate').value;
         
         if (name && date) {
-            allDocuments.push({ name, date, image: currentImgData, id: Date.now(), userEmail: currentUser });
+            let finalImage = currentImgData;
+            let bgConfig = null;
+
+            // إذا لم يقم بتصوير وثيقة، يتم توليد الخلفية العشوائية الملونة
+            if (!finalImage) {
+                bgConfig = generateRandomAvatar(name);
+            }
+
+            allDocuments.push({ 
+                name, 
+                date, 
+                image: finalImage, 
+                avatarConfig: bgConfig,
+                id: Date.now(), 
+                userEmail: currentUser 
+            });
+            
             localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
             
             document.getElementById('docName').value = "";
@@ -529,7 +573,8 @@
         } else { alert("يرجى إدخال اسم الوثيقة وتاريخ الانتهاء أولاً"); }
     }
 
-    function deleteDoc(id) {
+    function deleteDoc(id, event) {
+        event.stopPropagation(); // منع فتح المودال عند الرغبة في الحذف
         if(confirm("هل أنت متأكد من حذف الوثيقة؟")) {
             allDocuments = allDocuments.filter(d => d.id !== id);
             localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
@@ -539,10 +584,65 @@
 
     function getAlertStyle(expiryDate) {
         const diffDays = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) return { text: "⚠️ منتهية الصلاحية", class: "badge-red urgent-alert", color: "#f87171" };
-        if (diffDays <= 7) return { text: `🚨 تنبيه حرج: ${diffDays} يوم`, class: "badge-red urgent-alert", color: "#f87171" };
-        if (diffDays <= 30) return { text: `📅 اقترب الموعد: ${diffDays} يوم`, class: "badge-orange", color: "#fbbf24" };
-        return { text: `✅ صالحة: ${diffDays} يوم`, class: "badge-green", color: "#34d399" };
+        if (diffDays < 0) return { text: "⚠️ منتهية الصلاحية", class: "badge-red urgent-alert", color: "#ef4444" };
+        if (diffDays <= 7) return { text: `🚨 تنبيه حرج: ${diffDays} يوم`, class: "badge-red urgent-alert", color: "#ef4444" };
+        if (diffDays <= 30) return { text: `📅 اقترب الموعد: ${diffDays} يوم`, class: "badge-orange", color: "#f59e0b" };
+        return { text: `✅ صالحة: ${diffDays} يوم`, class: "badge-green", color: "#10b981" };
+    }
+
+    // وظائف النافذة المنبثقة ورؤية الصورة بالحجم الكامل مع زوم
+    function openImageDetails(name, imgData, avatarConfigJson) {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img-target');
+        document.getElementById('modal-doc-title').innerText = name;
+        document.getElementById('zoom-slider').value = 1; 
+        modalImg.style.transform = "scale(1)";
+
+        if (imgData) {
+            modalImg.src = imgData;
+            modalImg.style.display = "block";
+            // إزالة أي خلفيات رمزية مولدة سابقاً من المودال
+            const dynamicAvatar = document.getElementById('modal-dynamic-avatar');
+            if (dynamicAvatar) dynamicAvatar.remove();
+        } else {
+            // إذا كانت وثيقة نصية بدون صورة تولد نسختها المكبرة الأنيقة داخل المودال
+            modalImg.style.display = "none";
+            const config = JSON.parse(avatarConfigJson);
+            
+            const oldAvatar = document.getElementById('modal-dynamic-avatar');
+            if (oldAvatar) oldAvatar.remove();
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.id = "modal-dynamic-avatar";
+            avatarDiv.style.width = "180px";
+            avatarDiv.style.height = "180px";
+            avatarDiv.style.borderRadius = "24px";
+            avatarDiv.style.backgroundColor = config.color;
+            avatarDiv.style.display = "flex";
+            avatarDiv.style.alignItems = "center";
+            avatarDiv.style.justifyContent = "center";
+            avatarDiv.style.color = "white";
+            avatarDiv.style.fontSize = "4.5rem";
+            avatarDiv.style.fontWeight = "800";
+            avatarDiv.innerText = config.letter;
+            
+            document.querySelector('.modal-body').appendChild(avatarDiv);
+        }
+        modal.style.display = "flex";
+    }
+
+    function applyZoom(value) {
+        const modalImg = document.getElementById('modal-img-target');
+        const dynamicAvatar = document.getElementById('modal-dynamic-avatar');
+        if (modalImg.style.display !== "none") {
+            modalImg.style.transform = `scale(${value})`;
+        } else if (dynamicAvatar) {
+            dynamicAvatar.style.transform = `scale(${value})`;
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('image-modal').style.display = "none";
     }
 
     function render() {
@@ -553,29 +653,31 @@
         list.innerHTML = userDocs.map(doc => {
             const alert = getAlertStyle(doc.date);
             
-            const mediaPreview = doc.image 
-                ? `<img src="${doc.image}" class="doc-img-preview">` 
-                : `<div class="no-img-preview">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                     &nbsp; وثيقة نصية بدون صورة
-                   </div>`;
+            // إعداد الأيقونة الجانبية (إما صورة مصغرة أو خلفية ملونة عشوائية)
+            let avatarHTML = "";
+            let configString = doc.avatarConfig ? JSON.stringify(doc.avatarConfig) : "null";
+            
+            if (doc.image) {
+                avatarHTML = `<img src="${doc.image}" class="doc-avatar">`;
+            } else {
+                const bg = doc.avatarConfig || { color: '#4f46e5', letter: '✏️' };
+                avatarHTML = `<div class="doc-avatar" style="background-color: ${bg.color}">${bg.letter}</div>`;
+            }
 
             return `
-                <div class="doc-item" style="border-right: 6px solid ${alert.color}">
-                    ${mediaPreview}
-                    <div class="doc-content">
-                        <div class="doc-info">
-                            <b>${doc.name}</b>
-                            <small>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                ${doc.date}
-                            </small>
-                            <span class="status-tag ${alert.class}">${alert.text}</span>
-                        </div>
-                        <button class="btn-delete" onclick="deleteDoc(${doc.id})">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
+                <div class="doc-row-item" style="border-right: 5px solid ${alert.color}" onclick="openImageDetails('${doc.name}', ${doc.image ? `'${doc.image}'` : 'null'}, '${encodeURIComponent(configString)}')">
+                    ${avatarHTML}
+                    <div class="doc-details">
+                        <span class="doc-title-text">${doc.name}</span>
+                        <span class="doc-date-text">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            تاريخ الانتهاء: ${doc.date}
+                        </span>
+                        <span class="status-tag ${alert.class}">${alert.text}</span>
                     </div>
+                    <button class="btn-delete" onclick="deleteDoc(${doc.id}, event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
                 </div>
             `;
         }).join('');
