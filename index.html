@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محفظة الوثائق الذكية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #fdfdfe; --card: #ffffff; --primary: #4f46e5;
@@ -19,8 +19,12 @@
             padding: 20px; 
             color: var(--text); 
             display: flex; 
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            min-height: 100vh;
             line-height: 1.6;
+            box-sizing: border-box;
         }
 
         .container { 
@@ -31,6 +35,7 @@
             padding: 28px; 
             border-radius: 28px; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); 
+            box-sizing: border-box;
         }
         
         h2 { 
@@ -43,6 +48,31 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            margin-top: 0;
+        }
+
+        /* شريط المستخدم العلوي */
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 10px 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+        }
+        .btn-logout {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* الكاميرا والزر الشفاف */
@@ -142,6 +172,7 @@
             margin-bottom: 20px; 
             overflow: hidden; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            margin-top: 20px;
         }
         .doc-img-preview { 
             width: 100%; 
@@ -185,14 +216,59 @@
             transition: 0.2s;
         }
         .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* تبديل الصفحات العكسي */
+        .toggle-auth-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: var(--sub);
+        }
+        .toggle-auth-text span {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<!-- 1. واجهة تسجيل الدخول وإنشاء الحساب -->
+<div class="container" id="auth-section">
+    <h2 id="auth-title">تسجيل الدخول</h2>
+    
+    <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="authEmail" placeholder="name@example.com">
+    </div>
+    
+    <div class="form-group">
+        <label>كلمة السر</label>
+        <input type="password" id="authPassword" placeholder="••••••••">
+    </div>
+
+    <button class="btn-add" id="btn-auth-action" onclick="handleAuth()">دخول</button>
+    
+    <p class="toggle-auth-text" id="toggle-text">
+        ليس لديك حساب؟ <span onclick="switchAuthMode(true)">أنشئ حساباً جديداً</span>
+    </p>
+</div>
+
+<!-- 2. واجهة التطبيق الرئيسية (المحفظة) -->
+<div class="container" id="app-section" style="display: none;">
+    
+    <!-- شريط معلومات المستخدم الحالي -->
+    <div class="user-bar">
+        <div>مرحباً: <strong id="current-user-email"></strong></div>
+        <button class="btn-logout" onclick="logout()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            خروج
+        </button>
+    </div>
+
     <h2>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-   محفظة تاريخ إنتهاء الصلاحية
+        محفظة تاريخ إنتهاء الصلاحية
     </h2>
 
     <div id="camera-container">
@@ -221,8 +297,91 @@
 </div>
 
 <script>
-    let documents = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
+    // تهيئة مصفوفة الحسابات ومصفوفة الوثائق الكلية من الـ localStorage
+    let users = JSON.parse(localStorage.getItem('wallet_users')) || [];
+    let allDocuments = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
+    
+    let currentUser = localStorage.getItem('wallet_current_user') || null;
+    let isRegisterMode = false; 
     let currentImgData = "";
+
+    // التحقق من حالة الدخول عند تحميل الصفحة
+    function checkLoginStatus() {
+        if (currentUser) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('app-section').style.display = 'block';
+            document.getElementById('current-user-email').innerText = currentUser;
+            render();
+        } else {
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('app-section').style.display = 'none';
+        }
+    }
+
+    // التبديل بين واجهة "تسجيل الدخول" و "إنشاء حساب"
+    function switchAuthMode(toRegister) {
+        isRegisterMode = toRegister;
+        const title = document.getElementById('auth-title');
+        const btn = document.getElementById('btn-auth-action');
+        const toggleText = document.getElementById('toggle-text');
+
+        if (isRegisterMode) {
+            title.innerText = "إنشاء حساب جديد";
+            btn.innerText = "تسجيل الحساب";
+            toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="switchAuthMode(false)">سجل دخولك</span>`;
+        } else {
+            title.innerText = "تسجيل الدخول";
+            btn.innerText = "دخول";
+            toggleText.innerHTML = `ليس لديك حساب؟ <span onclick="switchAuthMode(true)">أنشئ حساباً جديداً</span>`;
+        }
+    }
+
+    // معالجة الدخول والتسجيل
+    function handleAuth() {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value.trim();
+
+        if (!email || !password) {
+            alert("يرجى ملء جميع الحقول");
+            return;
+        }
+
+        if (isRegisterMode) {
+            // التحقق من أن الحساب غير مسجل مسبقاً
+            const userExists = users.find(u => u.email === email);
+            if (userExists) {
+                alert("هذا البريد الإلكتروني مسجل بالفعل!");
+                return;
+            }
+            // إضافة الحساب الجديد
+            users.push({ email, password });
+            localStorage.setItem('wallet_users', JSON.stringify(users));
+            alert("تم إنشاء الحساب بنجاح! يمكنك الآن الدخول.");
+            switchAuthMode(false);
+        } else {
+            // التحقق من صحة بيانات الدخول
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                currentUser = email;
+                localStorage.setItem('wallet_current_user', currentUser);
+                checkLoginStatus();
+            } else {
+                alert("البريد الإلكتروني أو كلمة السر غير صحيحة");
+            }
+        }
+    }
+
+    // تسجيل الخروج
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('wallet_current_user');
+        // تفريغ الحقول القديمة لأمان المستخدم
+        document.getElementById('authEmail').value = "";
+        document.getElementById('authPassword').value = "";
+        checkLoginStatus();
+    }
+
+    // --- وظائف الكاميرا والتطبيق الأصلية تم تعديلها لتوافق حساب المستخدم ---
 
     async function startCamera() {
         const container = document.getElementById('camera-container');
@@ -254,16 +413,23 @@
         const name = document.getElementById('docName').value;
         const date = document.getElementById('docDate').value;
         if (name && date && currentImgData) {
-            documents.push({ name, date, image: currentImgData, id: Date.now() });
-            localStorage.setItem('hicham_docs_pro', JSON.stringify(documents));
-            location.reload();
+            // يتم حفظ الوثيقة مضافاً إليها حقل userEmail الخاص بالمستخدم الحالي
+            allDocuments.push({ name, date, image: currentImgData, id: Date.now(), userEmail: currentUser });
+            localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
+            
+            // إعادة تصفير المدخلات وإعادة العرض الفوري بدلاً من عمل reload كامل لعدم خسارة الجلسة
+            document.getElementById('docName').value = "";
+            document.getElementById('docDate').value = "";
+            currentImgData = "";
+            document.getElementById('start-cam').innerText = "📸 تصوير وثيقة جديدة";
+            render();
         } else { alert("يرجى إكمال البيانات والتصوير أولاً"); }
     }
 
     function deleteDoc(id) {
         if(confirm("هل أنت متأكد من حذف الوثيقة؟")) {
-            documents = documents.filter(d => d.id !== id);
-            localStorage.setItem('hicham_docs_pro', JSON.stringify(documents));
+            allDocuments = allDocuments.filter(d => d.id !== id);
+            localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
             render();
         }
     }
@@ -278,8 +444,12 @@
 
     function render() {
         const list = document.getElementById('docList');
-        documents.sort((a, b) => new Date(a.date) - new Date(b.date));
-        list.innerHTML = documents.map(doc => {
+        
+        // تصفية الوثائق لعرض الوثائق الخاصة بالمستخدم الحالي فقط
+        let userDocs = allDocuments.filter(doc => doc.userEmail === currentUser);
+        
+        userDocs.sort((a, b) => new Date(a.date) - new Date(b.date));
+        list.innerHTML = userDocs.map(doc => {
             const alert = getAlertStyle(doc.date);
             return `
                 <div class="doc-item" style="border-right: 6px solid ${alert.color}">
@@ -301,7 +471,9 @@
             `;
         }).join('');
     }
-    render();
+
+    // تشغيل فحص حالة الجلسة عند فتح التطبيق
+    checkLoginStatus();
 </script>
 
 </body>
