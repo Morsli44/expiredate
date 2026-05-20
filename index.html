@@ -181,7 +181,6 @@
             object-fit: contain; 
             background: #fafafa;
         }
-        /* تنسيق مخصص في حال عدم وجود صورة */
         .no-img-preview {
             width: 100%;
             height: 120px;
@@ -354,10 +353,10 @@
             btn.innerText = "تسجيل الحساب";
             passwordGroup.style.display = "block";
             forgotLink.style.display = "none";
-            toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
+            toggleText.innerHTML = `لديك حساب بالفعل？ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
         } else if (authMode === 'forgot') {
             title.innerText = "استعادة كلمة المرور";
-            btn.innerText = "استرجاع الآن";
+            btn.innerText = "إرسال كلمة المرور إلى بريدي";
             passwordGroup.style.display = "none";
             forgotLink.style.display = "none";
             toggleText.innerHTML = `تذكرت كلمة السر؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
@@ -381,10 +380,16 @@
         }
 
         if (authMode === 'forgot') {
-            // البحث عن الحساب عن طريق الإيميل لاستعادة كلمة السر
             const user = users.find(u => u.email === email);
             if (user) {
-                alert(`🔐 تم العثور على حسابك بنجاح!\nكلمة المرور الخاصة بك هي: [ ${user.password} ]`);
+                // إعداد نص الرسالة وعنوانها بشكل مسبق
+                const subject = encodeURIComponent("تذكير بكلمة المرور الخاصة بك - محفظة الوثائق");
+                const body = encodeURIComponent(`مرحباً،\n\nبناءً على طلبك، إليك بيانات تسجيل الدخول الخاصة بك:\n\nالبريد الإلكتروني: ${user.email}\nكلمة المرور: ${user.password}\n\nيرجى الاحتفاظ بها في مكان آمن.`);
+                
+                // فتح تطبيق البريد الإلكتروني الافتراضي في جهاز المستخدم لإرسال الرسالة فوراً لنفسه دون أي وسيط خارجي
+                window.location.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
+                
+                alert("🔒 تم إعداد رسالة تذكير ببياناتك؛ سيتم الآن فتح تطبيق البريد الخاص بك لإرسالها فوراً إلى إيميلك المسجل.");
                 switchAuthMode('login');
             } else {
                 alert("عذرًا، هذا البريد الإلكتروني غير مسجل في النظام.");
@@ -427,7 +432,7 @@
         checkLoginStatus();
     }
 
-    // --- وظائف التطبيق والكاميرا المحدثة ---
+    // --- وظائف التطبيق والكاميرا المحدثة السابقة كما هي تماماً ---
 
     async function startCamera() {
         const container = document.getElementById('camera-container');
@@ -459,12 +464,10 @@
         const name = document.getElementById('docName').value;
         const date = document.getElementById('docDate').value;
         
-        // تم تعديل الشرط ليقبل الحفظ بدون شرط التصوير (currentImgData اختياري الآن)
         if (name && date) {
             allDocuments.push({ name, date, image: currentImgData, id: Date.now(), userEmail: currentUser });
             localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
             
-            // تصفير الحقول للعملية القادمة
             document.getElementById('docName').value = "";
             document.getElementById('docDate').value = "";
             currentImgData = "";
@@ -497,7 +500,6 @@
         list.innerHTML = userDocs.map(doc => {
             const alert = getAlertStyle(doc.date);
             
-            // فحص إذا كانت الوثيقة تحتوي على صورة أم تم حفظها كملاحظة نصية فقط
             const mediaPreview = doc.image 
                 ? `<img src="${doc.image}" class="doc-img-preview">` 
                 : `<div class="no-img-preview">
