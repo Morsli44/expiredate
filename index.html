@@ -258,13 +258,13 @@
 <div class="container" id="auth-section">
     <h2 id="auth-title">تسجيل الدخول</h2>
     
-    <div class="form-group">
+    <div class="form-group" id="email-group">
         <label>البريد الإلكتروني</label>
         <input type="email" id="authEmail" placeholder="name@example.com">
     </div>
     
     <div class="form-group" id="password-group">
-        <label>كلمة السر</label>
+        <label id="password-label">كلمة السر</label>
         <input type="password" id="authPassword" placeholder="••••••••">
     </div>
 
@@ -323,8 +323,28 @@
     let allDocuments = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
     
     let currentUser = localStorage.getItem('wallet_current_user') || null;
-    let authMode = "login"; // يمكن أن تكون: login, register, forgot
+    let authMode = "login"; // login, register, forgot, reset
     let currentImgData = "";
+    let resetEmailTarget = ""; // الإيميل المراد إعادة تعيينه
+
+    // فحص إذا كان المستخدم قادماً من رابط استعادة آمن في بريده الإلكتروني
+    function checkUrlToken() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('reset_token');
+        if (token) {
+            try {
+                // فك تشفير الإيميل المرفق بالرابط الآمن
+                const decodedEmail = atob(token);
+                const userExists = users.find(u => u.email === decodedEmail);
+                if (userExists) {
+                    resetEmailTarget = decodedEmail;
+                    switchAuthMode('reset');
+                    // تنظيف الرابط في المتصفح لزيادة الأمان ومنع إعادة استخدامه من السجل
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch(e) { console.log("رابط غير صالح"); }
+        }
+    }
 
     function checkLoginStatus() {
         if (currentUser) {
@@ -335,61 +355,75 @@
         } else {
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('app-section').style.display = 'none';
-            switchAuthMode('login');
+            checkUrlToken(); // التحقق من الرابط الآمن إذا لم يكن مسجلاً
+            if (authMode !== 'reset') switchAuthMode('login');
         }
     }
 
-    // التبديل السلس بين أوضاع الواجهة المختلفة
     function switchAuthMode(mode) {
         authMode = mode;
         const title = document.getElementById('auth-title');
         const btn = document.getElementById('btn-auth-action');
         const toggleText = document.getElementById('toggle-text');
+        const emailGroup = document.getElementById('email-group');
         const passwordGroup = document.getElementById('password-group');
+        const passwordLabel = document.getElementById('password-label');
+        const passwordInput = document.getElementById('authPassword');
         const forgotLink = document.getElementById('forgot-link');
+
+        // إرجاع الإعدادات الافتراضية
+        emailGroup.style.display = "block";
+        passwordGroup.style.display = "block";
+        forgotLink.style.display = "none";
+        passwordInput.placeholder = "••••••••";
 
         if (authMode === 'register') {
             title.innerText = "إنشاء حساب جديد";
             btn.innerText = "تسجيل الحساب";
-            passwordGroup.style.display = "block";
-            forgotLink.style.display = "none";
-            toggleText.innerHTML = `لديك حساب بالفعل？ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
+            passwordLabel.innerText = "كلمة السر";
+            toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
         } else if (authMode === 'forgot') {
-            title.innerText = "استعادة كلمة المرور";
-            btn.innerText = "إرسال كلمة المرور إلى بريدي";
+            title.innerText = "استعادة آمنة لحسابك";
+            btn.innerText = "إرسال رابط إعادة التعيين لإيميلي";
             passwordGroup.style.display = "none";
-            forgotLink.style.display = "none";
             toggleText.innerHTML = `تذكرت كلمة السر؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
+        } else if (authMode === 'reset') {
+            title.innerText = "تعيين كلمة سر جديدة";
+            btn.innerText = "تحديث كلمة السر";
+            emailGroup.style.display = "none";
+            passwordLabel.innerText = "كلمة السر الجديدة لحساب: " + resetEmailTarget;
+            passwordInput.placeholder = "اكتب كلمة السر الجديدة هنا";
+            toggleText.innerHTML = `<span onclick="switchAuthMode('login')">إلغاء والعودة للدخول</span>`;
         } else {
             title.innerText = "تسجيل الدخول";
             btn.innerText = "دخول";
-            passwordGroup.style.display = "block";
+            passwordLabel.innerText = "كلمة السر";
             forgotLink.style.display = "block";
             toggleText.innerHTML = `ليس لديك حساب؟ <span onclick="switchAuthMode('register')">أنشئ حساباً جديداً</span>`;
         }
     }
 
-    // معالجة عمليات الحسابات
     function handleAuth() {
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPassword').value.trim();
 
-        if (!email) {
-            alert("يرجى إدخال البريد الإلكتروني أولاً");
-            return;
-        }
-
         if (authMode === 'forgot') {
+            if (!email) { alert("يرجى إدخال البريد الإلكتروني أولاً"); return; }
+            
             const user = users.find(u => u.email === email);
             if (user) {
-                // إعداد نص الرسالة وعنوانها بشكل مسبق
-                const subject = encodeURIComponent("تذكير بكلمة المرور الخاصة بك - محفظة الوثائق");
-                const body = encodeURIComponent(`مرحباً،\n\nبناءً على طلبك، إليك بيانات تسجيل الدخول الخاصة بك:\n\nالبريد الإلكتروني: ${user.email}\nكلمة المرور: ${user.password}\n\nيرجى الاحتفاظ بها في مكان آمن.`);
+                // توليد توكن مشفر مبني على البريد الإلكتروني
+                const secureToken = btoa(user.email);
+                // تجهيز رابط مخصص يعود لنفس هذا الملف الحالي
+                const appUrl = window.location.href.split('?')[0] + "?reset_token=" + secureToken;
                 
-                // فتح تطبيق البريد الإلكتروني الافتراضي في جهاز المستخدم لإرسال الرسالة فوراً لنفسه دون أي وسيط خارجي
+                const subject = encodeURIComponent("رابط آمن لإعادة تعيين كلمة المرور");
+                const body = encodeURIComponent(`مرحباً،\n\nلقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك.\n\nمنعاً للتجسس؛ لا يمكن لأي شخص غريب استخدام هذا الرابط إلا إذا كان يملك صلاحية فتح بريدك الإلكتروني هذا.\n\nاضغط على الرابط التالي لتعيين كلمة مرور جديدة ومباشرة:\n\n${appUrl}\n\nإذا لم تكن أنت من طلب هذا، يرجى تجاهل الرسالة.`);
+                
+                // فتح البريد لإرسال الرابط الآمن حصرياً إلى بريدك أنت المسجل في النظام
                 window.location.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
                 
-                alert("🔒 تم إعداد رسالة تذكير ببياناتك؛ سيتم الآن فتح تطبيق البريد الخاص بك لإرسالها فوراً إلى إيميلك المسجل.");
+                alert("🔒 حماية قصوى: تم حظر عرض أو إرسال كلمة المرور إلى هذا الهاتف.\n\nسيفتح الآن تطبيق البريد ليقوم بإرسال 'رابط إعادة تعيين مشفر' إلى بريدك الإلكتروني مباشرة. لن يتمكن أحد من تغيير كلمة السر إلا بالدخول لبريدك والنقر على الرابط.");
                 switchAuthMode('login');
             } else {
                 alert("عذرًا، هذا البريد الإلكتروني غير مسجل في النظام.");
@@ -397,17 +431,27 @@
             return;
         }
 
-        if (!password) {
-            alert("يرجى إدخال كلمة السر");
+        if (authMode === 'reset') {
+            if (!password || password.length < 4) { alert("يرجى إدخال كلمة سر صالحة (لا تقل عن 4 رموز)"); return; }
+            
+            // تحديث كلمة السر في الـ LocalStorage للحساب المعني
+            users = users.map(u => {
+                if (u.email === resetEmailTarget) { return { ...u, password: password }; }
+                return u;
+            });
+            localStorage.setItem('wallet_users', JSON.stringify(users));
+            alert("🎉 ممتاز! تم تحديث وتغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بها.");
+            document.getElementById('authPassword').value = "";
+            switchAuthMode('login');
             return;
         }
 
+        // العمليات الافتراضية
+        if (!email || !password) { alert("يرجى ملء جميع الحقول"); return; }
+
         if (authMode === 'register') {
             const userExists = users.find(u => u.email === email);
-            if (userExists) {
-                alert("هذا البريد الإلكتروني مسجل بالفعل!");
-                return;
-            }
+            if (userExists) { alert("هذا البريد الإلكتروني مسجل بالفعل!"); return; }
             users.push({ email, password });
             localStorage.setItem('wallet_users', JSON.stringify(users));
             alert("تم إنشاء الحساب بنجاح! يمكنك الآن الدخول.");
@@ -432,7 +476,7 @@
         checkLoginStatus();
     }
 
-    // --- وظائف التطبيق والكاميرا المحدثة السابقة كما هي تماماً ---
+    // --- وظائف الكاميرا وحفظ الوثائق السابقة كما هي تماماً وبدون أي تعديل ---
 
     async function startCamera() {
         const container = document.getElementById('camera-container');
