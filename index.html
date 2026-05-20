@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محفظة الوثائق الذكية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap" rel="stylesheet">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
     <style>
         :root {
             --bg: #fdfdfe; --card: #ffffff; --primary: #4f46e5;
@@ -51,7 +54,6 @@
             margin-top: 0;
         }
 
-        /* شريط المستخدم العلوي */
         .user-bar {
             display: flex;
             justify-content: space-between;
@@ -75,7 +77,6 @@
             gap: 5px;
         }
 
-        /* الكاميرا والزر الشفاف */
         #camera-container { 
             width: 100%; 
             background: #000; 
@@ -107,7 +108,6 @@
             z-index: 10;
         }
 
-        /* حقول الإدخال */
         .form-group { margin-bottom: 18px; }
         label { 
             font-size: 0.8rem; 
@@ -164,7 +164,6 @@
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
         }
 
-        /* عرض الوثائق */
         .doc-item { 
             background: #ffffff; 
             border: 1px solid var(--border); 
@@ -226,7 +225,6 @@
         }
         .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
-        /* خيارات أسفل واجهة الدخول */
         .toggle-auth-text {
             text-align: center;
             margin-top: 15px;
@@ -254,7 +252,6 @@
 </head>
 <body>
 
-<!-- 1. واجهة تسجيل الدخول وإنشاء الحساب واستعادة كلمة السر -->
 <div class="container" id="auth-section">
     <h2 id="auth-title">تسجيل الدخول</h2>
     
@@ -276,10 +273,7 @@
     <a class="forgot-password-link" id="forgot-link" onclick="switchAuthMode('forgot')">نسيت كلمة المرور؟</a>
 </div>
 
-<!-- 2. واجهة التطبيق الرئيسية (المحفظة) -->
 <div class="container" id="app-section" style="display: none;">
-    
-    <!-- شريط معلومات المستخدم الحالي -->
     <div class="user-bar">
         <div>مرحباً: <strong id="current-user-email"></strong></div>
         <button class="btn-logout" onclick="logout()">
@@ -323,23 +317,27 @@
     let allDocuments = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
     
     let currentUser = localStorage.getItem('wallet_current_user') || null;
-    let authMode = "login"; // login, register, forgot, reset
+    let authMode = "login"; 
     let currentImgData = "";
-    let resetEmailTarget = ""; // الإيميل المراد إعادة تعيينه
+    let resetEmailTarget = ""; 
 
-    // فحص إذا كان المستخدم قادماً من رابط استعادة آمن في بريده الإلكتروني
+    // تهيئة مكتبة EmailJS بالمفاتيح الصحيحة المستخرجة من حسابك بنجاح
+    (function() {
+        emailjs.init({
+            publicKey: "-KryRcikMUDVyC3kQ", 
+        });
+    })();
+
     function checkUrlToken() {
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('reset_token');
         if (token) {
             try {
-                // فك تشفير الإيميل المرفق بالرابط الآمن
                 const decodedEmail = atob(token);
                 const userExists = users.find(u => u.email === decodedEmail);
                 if (userExists) {
                     resetEmailTarget = decodedEmail;
                     switchAuthMode('reset');
-                    // تنظيف الرابط في المتصفح لزيادة الأمان ومنع إعادة استخدامه من السجل
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             } catch(e) { console.log("رابط غير صالح"); }
@@ -355,13 +353,12 @@
         } else {
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('app-section').style.display = 'none';
-            checkUrlToken(); // التحقق من الرابط الآمن إذا لم يكن مسجلاً
+            checkUrlToken(); 
             if (authMode !== 'reset') switchAuthMode('login');
         }
     }
 
     function switchAuthMode(mode) {
-        authMode = mode;
         const title = document.getElementById('auth-title');
         const btn = document.getElementById('btn-auth-action');
         const toggleText = document.getElementById('toggle-text');
@@ -371,7 +368,7 @@
         const passwordInput = document.getElementById('authPassword');
         const forgotLink = document.getElementById('forgot-link');
 
-        // إرجاع الإعدادات الافتراضية
+        authMode = mode;
         emailGroup.style.display = "block";
         passwordGroup.style.display = "block";
         forgotLink.style.display = "none";
@@ -412,21 +409,37 @@
             
             const user = users.find(u => u.email === email);
             if (user) {
-                // توليد توكن مشفر مبني على البريد الإلكتروني
                 const secureToken = btoa(user.email);
-                // تجهيز رابط مخصص يعود لنفس هذا الملف الحالي
-                const appUrl = window.location.href.split('?')[0] + "?reset_token=" + secureToken;
+                const appUrl = window.location.href.split('?')[0];
+                const finalResetLink = appUrl + "?reset_token=" + secureToken;
                 
-                const subject = encodeURIComponent("رابط آمن لإعادة تعيين كلمة المرور");
-                const body = encodeURIComponent(`مرحباً،\n\nلقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك.\n\nمنعاً للتجسس؛ لا يمكن لأي شخص غريب استخدام هذا الرابط إلا إذا كان يملك صلاحية فتح بريدك الإلكتروني هذا.\n\nاضغط على الرابط التالي لتعيين كلمة مرور جديدة ومباشرة:\n\n${appUrl}\n\nإذا لم تكن أنت من طلب هذا، يرجى تجاهل الرسالة.`);
-                
-                // فتح البريد لإرسال الرابط الآمن حصرياً إلى بريدك أنت المسجل في النظام
-                window.location.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
-                
-                alert("🔒 حماية قصوى: تم حظر عرض أو إرسال كلمة المرور إلى هذا الهاتف.\n\nسيفتح الآن تطبيق البريد ليقوم بإرسال 'رابط إعادة تعيين مشفر' إلى بريدك الإلكتروني مباشرة. لن يتمكن أحد من تغيير كلمة السر إلا بالدخول لبريدك والنقر على الرابط.");
-                switchAuthMode('login');
+                const btn = document.getElementById('btn-auth-action');
+                btn.innerText = "جاري الإرسال بأمان...";
+                btn.disabled = true;
+
+                const templateParams = {
+                    email: user.email,
+                    reset_link: finalResetLink
+                };
+
+                // استخدام معرف الخدمة ومعرف القالب الخاص بك لإرسال بريد الاستعادة
+                emailjs.send(
+                    'service_bjt0g0d', 
+                    'template_70cxo8f', 
+                    templateParams
+                )
+                .then(function(response) {
+                    btn.innerText = "إرسال رابط إعادة التعيين لإيميلي";
+                    btn.disabled = false;
+                    alert("🔒 تم إرسال الرابط بنجاح وسرية تامة مباشرة إلى بريدك الإلكتروني.");
+                    switchAuthMode('login');
+                }, function(error) {
+                    btn.innerText = "إرسال رابط إعادة التعيين لإيميلي";
+                    btn.disabled = false;
+                    alert("فشل الإرسال: " + JSON.stringify(error));
+                });
             } else {
-                alert("عذرًا، هذا البريد الإلكتروني غير مسجل في النظام.");
+                alert("عذرًا، هذا البريد الإلكتروني غير مسجل.");
             }
             return;
         }
@@ -434,19 +447,17 @@
         if (authMode === 'reset') {
             if (!password || password.length < 4) { alert("يرجى إدخال كلمة سر صالحة (لا تقل عن 4 رموز)"); return; }
             
-            // تحديث كلمة السر في الـ LocalStorage للحساب المعني
             users = users.map(u => {
                 if (u.email === resetEmailTarget) { return { ...u, password: password }; }
                 return u;
             });
             localStorage.setItem('wallet_users', JSON.stringify(users));
-            alert("🎉 ممتاز! تم تحديث وتغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بها.");
+            alert("🎉 تم تغيير كلمة المرور بنجاح.");
             document.getElementById('authPassword').value = "";
             switchAuthMode('login');
             return;
         }
 
-        // العمليات الافتراضية
         if (!email || !password) { alert("يرجى ملء جميع الحقول"); return; }
 
         if (authMode === 'register') {
@@ -454,7 +465,7 @@
             if (userExists) { alert("هذا البريد الإلكتروني مسجل بالفعل!"); return; }
             users.push({ email, password });
             localStorage.setItem('wallet_users', JSON.stringify(users));
-            alert("تم إنشاء الحساب بنجاح! يمكنك الآن الدخول.");
+            alert("تم إنشاء الحساب بنجاح!");
             switchAuthMode('login');
         } else {
             const user = users.find(u => u.email === email && u.password === password);
@@ -475,8 +486,6 @@
         document.getElementById('authPassword').value = "";
         checkLoginStatus();
     }
-
-    // --- وظائف الكاميرا وحفظ الوثائق السابقة كما هي تماماً وبدون أي تعديل ---
 
     async function startCamera() {
         const container = document.getElementById('camera-container');
