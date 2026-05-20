@@ -181,6 +181,16 @@
             object-fit: contain; 
             background: #fafafa;
         }
+        /* تنسيق مخصص في حال عدم وجود صورة */
+        .no-img-preview {
+            width: 100%;
+            height: 120px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
         .doc-content { padding: 18px; display: flex; justify-content: space-between; align-items: flex-start; }
         
         .doc-info b { font-size: 1.1rem; color: var(--text); font-weight: 800; display: block; }
@@ -217,7 +227,7 @@
         }
         .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
-        /* تبديل الصفحات العكسي */
+        /* خيارات أسفل واجهة الدخول */
         .toggle-auth-text {
             text-align: center;
             margin-top: 15px;
@@ -229,11 +239,23 @@
             cursor: pointer;
             font-weight: 700;
         }
+        .forgot-password-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--sub);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .forgot-password-link:hover {
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
 
-<!-- 1. واجهة تسجيل الدخول وإنشاء الحساب -->
+<!-- 1. واجهة تسجيل الدخول وإنشاء الحساب واستعادة كلمة السر -->
 <div class="container" id="auth-section">
     <h2 id="auth-title">تسجيل الدخول</h2>
     
@@ -242,7 +264,7 @@
         <input type="email" id="authEmail" placeholder="name@example.com">
     </div>
     
-    <div class="form-group">
+    <div class="form-group" id="password-group">
         <label>كلمة السر</label>
         <input type="password" id="authPassword" placeholder="••••••••">
     </div>
@@ -250,8 +272,9 @@
     <button class="btn-add" id="btn-auth-action" onclick="handleAuth()">دخول</button>
     
     <p class="toggle-auth-text" id="toggle-text">
-        ليس لديك حساب؟ <span onclick="switchAuthMode(true)">أنشئ حساباً جديداً</span>
+        ليس لديك حساب؟ <span onclick="switchAuthMode('register')">أنشئ حساباً جديداً</span>
     </p>
+    <a class="forgot-password-link" id="forgot-link" onclick="switchAuthMode('forgot')">نسيت كلمة المرور؟</a>
 </div>
 
 <!-- 2. واجهة التطبيق الرئيسية (المحفظة) -->
@@ -278,11 +301,11 @@
 
     <button class="btn-camera" id="start-cam" onclick="startCamera()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-        تصوير وثيقة جديدة
+        تصوير وثيقة جديدة (اختياري)
     </button>
 
     <div class="form-group">
-        <label>اسم الوثيقة</label>
+        <label>اسم الوثيقة / الملاحظة</label>
         <input type="text" id="docName" placeholder="مثلاً: بطاقة التعريف الوطنية">
     </div>
     
@@ -297,15 +320,13 @@
 </div>
 
 <script>
-    // تهيئة مصفوفة الحسابات ومصفوفة الوثائق الكلية من الـ localStorage
     let users = JSON.parse(localStorage.getItem('wallet_users')) || [];
     let allDocuments = JSON.parse(localStorage.getItem('hicham_docs_pro')) || [];
     
     let currentUser = localStorage.getItem('wallet_current_user') || null;
-    let isRegisterMode = false; 
+    let authMode = "login"; // يمكن أن تكون: login, register, forgot
     let currentImgData = "";
 
-    // التحقق من حالة الدخول عند تحميل الصفحة
     function checkLoginStatus() {
         if (currentUser) {
             document.getElementById('auth-section').style.display = 'none';
@@ -315,51 +336,78 @@
         } else {
             document.getElementById('auth-section').style.display = 'block';
             document.getElementById('app-section').style.display = 'none';
+            switchAuthMode('login');
         }
     }
 
-    // التبديل بين واجهة "تسجيل الدخول" و "إنشاء حساب"
-    function switchAuthMode(toRegister) {
-        isRegisterMode = toRegister;
+    // التبديل السلس بين أوضاع الواجهة المختلفة
+    function switchAuthMode(mode) {
+        authMode = mode;
         const title = document.getElementById('auth-title');
         const btn = document.getElementById('btn-auth-action');
         const toggleText = document.getElementById('toggle-text');
+        const passwordGroup = document.getElementById('password-group');
+        const forgotLink = document.getElementById('forgot-link');
 
-        if (isRegisterMode) {
+        if (authMode === 'register') {
             title.innerText = "إنشاء حساب جديد";
             btn.innerText = "تسجيل الحساب";
-            toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="switchAuthMode(false)">سجل دخولك</span>`;
+            passwordGroup.style.display = "block";
+            forgotLink.style.display = "none";
+            toggleText.innerHTML = `لديك حساب بالفعل؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
+        } else if (authMode === 'forgot') {
+            title.innerText = "استعادة كلمة المرور";
+            btn.innerText = "استرجاع الآن";
+            passwordGroup.style.display = "none";
+            forgotLink.style.display = "none";
+            toggleText.innerHTML = `تذكرت كلمة السر؟ <span onclick="switchAuthMode('login')">سجل دخولك</span>`;
         } else {
             title.innerText = "تسجيل الدخول";
             btn.innerText = "دخول";
-            toggleText.innerHTML = `ليس لديك حساب؟ <span onclick="switchAuthMode(true)">أنشئ حساباً جديداً</span>`;
+            passwordGroup.style.display = "block";
+            forgotLink.style.display = "block";
+            toggleText.innerHTML = `ليس لديك حساب؟ <span onclick="switchAuthMode('register')">أنشئ حساباً جديداً</span>`;
         }
     }
 
-    // معالجة الدخول والتسجيل
+    // معالجة عمليات الحسابات
     function handleAuth() {
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPassword').value.trim();
 
-        if (!email || !password) {
-            alert("يرجى ملء جميع الحقول");
+        if (!email) {
+            alert("يرجى إدخال البريد الإلكتروني أولاً");
             return;
         }
 
-        if (isRegisterMode) {
-            // التحقق من أن الحساب غير مسجل مسبقاً
+        if (authMode === 'forgot') {
+            // البحث عن الحساب عن طريق الإيميل لاستعادة كلمة السر
+            const user = users.find(u => u.email === email);
+            if (user) {
+                alert(`🔐 تم العثور على حسابك بنجاح!\nكلمة المرور الخاصة بك هي: [ ${user.password} ]`);
+                switchAuthMode('login');
+            } else {
+                alert("عذرًا، هذا البريد الإلكتروني غير مسجل في النظام.");
+            }
+            return;
+        }
+
+        if (!password) {
+            alert("يرجى إدخال كلمة السر");
+            return;
+        }
+
+        if (authMode === 'register') {
             const userExists = users.find(u => u.email === email);
             if (userExists) {
                 alert("هذا البريد الإلكتروني مسجل بالفعل!");
                 return;
             }
-            // إضافة الحساب الجديد
             users.push({ email, password });
             localStorage.setItem('wallet_users', JSON.stringify(users));
             alert("تم إنشاء الحساب بنجاح! يمكنك الآن الدخول.");
-            switchAuthMode(false);
+            switchAuthMode('login');
         } else {
-            // التحقق من صحة بيانات الدخول
             const user = users.find(u => u.email === email && u.password === password);
             if (user) {
                 currentUser = email;
@@ -371,17 +419,15 @@
         }
     }
 
-    // تسجيل الخروج
     function logout() {
         currentUser = null;
         localStorage.removeItem('wallet_current_user');
-        // تفريغ الحقول القديمة لأمان المستخدم
         document.getElementById('authEmail').value = "";
         document.getElementById('authPassword').value = "";
         checkLoginStatus();
     }
 
-    // --- وظائف الكاميرا والتطبيق الأصلية تم تعديلها لتوافق حساب المستخدم ---
+    // --- وظائف التطبيق والكاميرا المحدثة ---
 
     async function startCamera() {
         const container = document.getElementById('camera-container');
@@ -412,18 +458,19 @@
     function saveDocument() {
         const name = document.getElementById('docName').value;
         const date = document.getElementById('docDate').value;
-        if (name && date && currentImgData) {
-            // يتم حفظ الوثيقة مضافاً إليها حقل userEmail الخاص بالمستخدم الحالي
+        
+        // تم تعديل الشرط ليقبل الحفظ بدون شرط التصوير (currentImgData اختياري الآن)
+        if (name && date) {
             allDocuments.push({ name, date, image: currentImgData, id: Date.now(), userEmail: currentUser });
             localStorage.setItem('hicham_docs_pro', JSON.stringify(allDocuments));
             
-            // إعادة تصفير المدخلات وإعادة العرض الفوري بدلاً من عمل reload كامل لعدم خسارة الجلسة
+            // تصفير الحقول للعملية القادمة
             document.getElementById('docName').value = "";
             document.getElementById('docDate').value = "";
             currentImgData = "";
-            document.getElementById('start-cam').innerText = "📸 تصوير وثيقة جديدة";
+            document.getElementById('start-cam').innerText = "📸 تصوير وثيقة جديدة (اختياري)";
             render();
-        } else { alert("يرجى إكمال البيانات والتصوير أولاً"); }
+        } else { alert("يرجى إدخال اسم الوثيقة وتاريخ الانتهاء أولاً"); }
     }
 
     function deleteDoc(id) {
@@ -444,16 +491,23 @@
 
     function render() {
         const list = document.getElementById('docList');
-        
-        // تصفية الوثائق لعرض الوثائق الخاصة بالمستخدم الحالي فقط
         let userDocs = allDocuments.filter(doc => doc.userEmail === currentUser);
         
         userDocs.sort((a, b) => new Date(a.date) - new Date(b.date));
         list.innerHTML = userDocs.map(doc => {
             const alert = getAlertStyle(doc.date);
+            
+            // فحص إذا كانت الوثيقة تحتوي على صورة أم تم حفظها كملاحظة نصية فقط
+            const mediaPreview = doc.image 
+                ? `<img src="${doc.image}" class="doc-img-preview">` 
+                : `<div class="no-img-preview">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                     &nbsp; وثيقة نصية بدون صورة
+                   </div>`;
+
             return `
                 <div class="doc-item" style="border-right: 6px solid ${alert.color}">
-                    <img src="${doc.image}" class="doc-img-preview">
+                    ${mediaPreview}
                     <div class="doc-content">
                         <div class="doc-info">
                             <b>${doc.name}</b>
@@ -472,7 +526,6 @@
         }).join('');
     }
 
-    // تشغيل فحص حالة الجلسة عند فتح التطبيق
     checkLoginStatus();
 </script>
 
